@@ -120,7 +120,7 @@ pub enum SteamworksEvent {
     UserStatsReceived(steamworks::UserStatsReceived),
     UserStatsStored(steamworks::UserStatsStored),
     ValidateAuthTicketResponse(steamworks::ValidateAuthTicketResponse),
-    NetworkingMessagesSessionRequest(steamworks::NetworkingMessagesSessionRequest)
+    NetworkingMessagesSessionRequest(steamworks::networking_messages::NetworkingMessagesSessionRequest)
 }
 
 macro_rules! register_event_callbacks {
