@@ -120,7 +120,8 @@ pub enum SteamworksEvent {
     UserStatsReceived(steamworks::UserStatsReceived),
     UserStatsStored(steamworks::UserStatsStored),
     ValidateAuthTicketResponse(steamworks::ValidateAuthTicketResponse),
-    NetworkingMessagesSessionRequest(steamworks::networking_messages::NetworkingMessagesSessionRequest)
+    NetworkingMessagesSessionRequest(steamworks::networking_messages::NetworkingMessagesSessionRequest),
+    RelayNetworkStatusCallback(steamworks::networking_utils::RelayNetworkStatusCallback)
 }
 
 macro_rules! register_event_callbacks {
@@ -162,12 +163,9 @@ impl Deref for Client {
     }
 }
 
-#[derive(Resource)]
-struct SingleClient(SyncCell<steamworks::SingleClient>);
-
 /// A Bevy [`Plugin`] for adding support for the Steam SDK.
 pub struct SteamworksPlugin {
-    steam: Mutex<Option<(steamworks::Client, steamworks::SingleClient)>>,
+    steam: Mutex<Option<steamworks::Client>>,
 }
 
 impl SteamworksPlugin {
@@ -192,7 +190,7 @@ impl SteamworksPlugin {
 
 impl Plugin for SteamworksPlugin {
     fn build(&self, app: &mut App) {
-        let (client, single) = self
+        let client = self
             .steam
             .lock()
             .unwrap()
@@ -200,7 +198,6 @@ impl Plugin for SteamworksPlugin {
             .expect("The SteamworksPlugin was initialized more than once");
 
         app.insert_resource(Client(client.clone()))
-            .insert_resource(SingleClient(SyncCell::new(single)))
             .insert_resource(register_event_callbacks!(
                 client,
                 AuthSessionTicketResponse,
@@ -242,11 +239,9 @@ pub enum SteamworksSystem {
 }
 
 fn run_steam_callbacks(
-    mut client: ResMut<SingleClient>,
     events: Res<SteamEvents>,
     mut output: EventWriter<SteamworksEvent>,
 ) {
-    client.0.get().run_callbacks();
     // SAFETY: The callback is only called during `run_steam_callbacks` which cannot run
     // while any of the flush_events systems are running. The system is registered only once for
     // the client. This cannot alias.
