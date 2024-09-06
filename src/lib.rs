@@ -239,12 +239,14 @@ pub enum SteamworksSystem {
 }
 
 fn run_steam_callbacks(
+    client: ResMut<Client>,
     events: Res<SteamEvents>,
     mut output: EventWriter<SteamworksEvent>,
 ) {
     // SAFETY: The callback is only called during `run_steam_callbacks` which cannot run
     // while any of the flush_events systems are running. The system is registered only once for
     // the client. This cannot alias.
+    client.0.run_callbacks();
     let pending = unsafe { &mut *events.pending.get() };
     if !pending.is_empty() {
         output.send_batch(pending.drain(0..));
